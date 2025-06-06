@@ -6,7 +6,8 @@ import {
   BarChart3, 
   Shield, 
   FileText,
-  Users
+  Users,
+  Camera
 } from 'lucide-react';
 
 const Sidebar = ({ activeTab }) => {
@@ -14,7 +15,8 @@ const Sidebar = ({ activeTab }) => {
     { id: 'home', label: 'Dashboard', icon: BarChart3, path: '/' },
     { id: 'membership-list', label: 'Membership', icon: Car, path: '/membership-list' },
     { id: 'plat-illegal', label: 'Pencarian Plat Ilegal', icon: Shield, path: '/plat-illegal' },
-    { id: 'logs', label: 'Log Aktivitas', icon: FileText, path: '/logs' }
+    { id: 'logs', label: 'Log Aktivitas', icon: FileText, path: '/logs' },
+    { id: 'camera', label: 'Kamera', icon: Camera, path: '/camera' }
   ];
 
   return (

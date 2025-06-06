@@ -25,6 +25,8 @@ const PlatIllegalScreen = () => {
   const [historyLogData, setHistoryLogData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   
   // Form state for adding new illegal plate
@@ -34,6 +36,15 @@ const PlatIllegalScreen = () => {
     no_wa: "",
     description: ""
   });
+
+  // Function to handle image modal
+  const handleImageClick = (imageUrl, plateNumber) => {
+    setSelectedImage({
+      url: imageUrl,
+      plateNumber: plateNumber
+    });
+    setShowImageModal(true);
+  };
 
   // Fetch illegal plates data
   const fetchIllegalPlates = async () => {
@@ -322,9 +333,9 @@ const PlatIllegalScreen = () => {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Foto
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                {/* <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Aksi
-                </th>
+                </th> */}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -374,14 +385,18 @@ const PlatIllegalScreen = () => {
                         <img
                           src={log.img_path || "https://via.placeholder.com/60x40?text=No+Image"}
                           alt="Vehicle"
-                          className="w-12 h-8 object-cover rounded-lg border-2 border-gray-200"
+                          className="w-12 h-8 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors"
+                          onClick={() => handleImageClick(log.img_path || "https://via.placeholder.com/60x40?text=No+Image", log.plate_number)}
                         />
-                        <button className="ml-2 p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button 
+                          className="ml-2 p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          onClick={() => handleImageClick(log.img_path || "https://via.placeholder.com/60x40?text=No+Image", log.plate_number)}
+                        >
                           <Camera className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex space-x-2">
                         <button className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
                           <Eye className="w-4 h-4" />
@@ -390,7 +405,7 @@ const PlatIllegalScreen = () => {
                           <Download className="w-4 h-4" />
                         </button>
                       </div>
-                    </td>
+                    </td> */}
                   </tr>
                 );
               })}
@@ -500,6 +515,60 @@ const PlatIllegalScreen = () => {
     </div>
   );
 
+  // New Image Modal component
+  const renderImageModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] overflow-auto">
+        <div className="sticky top-0 bg-white flex justify-between items-center p-4 border-b">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Foto Kendaraan</h3>
+            <p className="text-sm text-gray-600">Plat: {selectedImage?.plateNumber}</p>
+          </div>
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="p-6">
+          <div className="flex justify-center">
+            <img
+              src={selectedImage?.url}
+              alt={`Vehicle ${selectedImage?.plateNumber}`}
+              className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-lg"
+              onError={(e) => {
+                e.target.src = "https://via.placeholder.com/400x300?text=Gambar+Tidak+Ditemukan";
+              }}
+            />
+          </div>
+          
+          <div className="flex justify-center gap-3 mt-6">
+            <button
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = selectedImage?.url;
+                link.download = `foto_${selectedImage?.plateNumber}_${new Date().getTime()}.jpg`;
+                link.click();
+              }}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Foto
+            </button>
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -580,7 +649,7 @@ const PlatIllegalScreen = () => {
       {activeTab === "illegal" ? renderIllegalTable() : renderHistoryTable()}
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-red-500">
           <div className="flex items-center">
             <div className="bg-red-100 p-3 rounded-full">
@@ -625,10 +694,13 @@ const PlatIllegalScreen = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Add Modal */}
       {showAddModal && renderAddModal()}
+
+      {/* Image Modal */}
+      {showImageModal && renderImageModal()}
     </div>
   );
 };

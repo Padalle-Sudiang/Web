@@ -22,6 +22,7 @@ const AppContent = () => {
       case '/validation': return 'validation';
       case '/statistics': return 'statistics';
       case '/logs': return 'logs';
+      case '/camera': return 'camera';
       default: return 'home';
     }
   };
