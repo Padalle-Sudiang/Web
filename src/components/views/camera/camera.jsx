@@ -27,11 +27,11 @@ const LiveStreamMonitor = () => {
   const [captureHistory, setCaptureHistory] = useState([]);
   const [selectedCamera, setSelectedCamera] = useState("camera1");
   const [latestVehicle, setLatestVehicle] = useState(null);
+  const [isMember, setIsMember] = useState(null);
 
   const baseUrl = "http://10.12.12.251:5000";
   const videoStreamUrl = `${baseUrl}/video_feed`;
 
-  // Available cameras
   const cameras = [
     { id: "camera1", name: "Camera 1 - Main Gate", status: "online" },
     { id: "camera2", name: "Camera 2 - Parking Area", status: "online" },
@@ -45,7 +45,7 @@ const LiveStreamMonitor = () => {
     setCaptureStatus("Capturing...");
 
     try {
-      const response = await fetch(`${baseUrl}/capture`, {
+      const response = await fetch(`${baseUrl}/capture-exit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,22 +91,95 @@ const LiveStreamMonitor = () => {
   const getLatestVehicle = async () => {
     try {
       const response = await fetch(
-        "http://tkj-3b.com/tkj-3b.com/opengate/get-vehicles.php"
+        "http://tkj-3b.com/tkj-3b.com/opengate/parking-logs.php"
       );
       const data = await response.json();
 
+      // console.log("Data mentah:", data);
+
       if (Array.isArray(data) && data.length > 0) {
-        const sortedData = data.sort(
-          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        const withTimestamps = data.filter((item) => item.exit_time);
+
+        // console.log("Dengan exit_time:", withTimestamps);
+
+        const sortedData = withTimestamps.sort(
+          (a, b) =>
+            new Date(b.exit_time.replace(" ", "T")) -
+            new Date(a.exit_time.replace(" ", "T"))
         );
 
+        const isMem = await getLatestMember(sortedData[0].plate_number);
+        setIsMember(isMem);
+
         setLatestVehicle(sortedData[0]);
-        console.log("Data terbaru:", sortedData[0]);
       } else {
         console.warn("Data kosong atau bukan array");
       }
     } catch (error) {
       console.error("Gagal mengambil data:", error);
+    }
+  };
+
+  const getLatestMember = async (plateNumber) => {
+    try {
+      const response = await fetch(
+        "http://tkj-3b.com/tkj-3b.com/opengate/get-vehicles.php"
+      );
+      const members = await response.json();
+
+      const match = members.find(
+        (item) => item.plate_number === plateNumber && item.is_member === "1"
+      );
+
+      return !!match;
+    } catch (error) {
+      console.error("Gagal fetch member:", error);
+      return false;
+    }
+  };
+
+  const membership = async () => {
+    try {
+      const exitTime = new Date().toISOString();
+      const response = await fetch(
+        "http://tkj-3b.com/tkj-3b.com/opengate/parking-payment.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            plate_number: latestVehicle?.plate_number,
+            exit_time: exitTime,
+            amount_paid: 0,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update parking data");
+
+      const result = await response.json();
+      console.log(latestVehicle?.plate_number);
+      console.log(exitTime);
+
+      console.log("Respon untuk open gatenya?: ", result);
+
+      if (typeof result === "object" && "open_gate" in result) {
+        if (result.open_gate) {
+          try {
+            await fetch("http://10.12.12.251:5050/servo/open", {
+              method: "POST",
+            });
+            console.log("Servo opened successfully");
+          } catch (servoErr) {
+            console.error("Error opening servo:", servoErr);
+          }
+        } else {
+          throw new Error(result.message || "Failed to process payment");
+        }
+      } else {
+        throw new Error("Response format invalid: 'open_gate' not found");
+      }
+    } catch (error) {
+      console.error("Error processing payment:", error);
     }
   };
 
@@ -125,13 +198,13 @@ const LiveStreamMonitor = () => {
     setIsMuted(!isMuted);
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    membership();
     handleCapture();
-    getLatestVehicle();
+    await getLatestVehicle();
   };
 
   const handlePayment = () => {
-    // Navigasi ke halaman logs
     navigate("/logs", { state: { prioritize: latestVehicle?.plate_number } });
   };
 
@@ -386,48 +459,43 @@ const LiveStreamMonitor = () => {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Jenis Kendaraan</span>
-                  <span className="font-medium">
-                    {latestVehicle?.plate_type}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
                   <span className="text-gray-600">Status Member</span>
                   <span className="font-medium">
-                    {latestVehicle?.is_member === "1"
-                      ? "Member"
-                      : "Bukan Member"}
+                    {isMember && "Member"}
+                    {!isMember && "Bukan Member"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Tanggal</span>
+                  <span className="text-gray-600">Tanggal Masuk</span>
                   <span className="font-medium">
-                    {latestVehicle?.created_at?.split(" ")[0]}
+                    {latestVehicle?.entry_time?.split(" ")[0]}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Waktu</span>
+                  <span className="text-gray-600">Waktu Masuk</span>
                   <span className="font-medium">
-                    {latestVehicle?.created_at?.split(" ")[1]}
+                    {latestVehicle?.entry_time?.split(" ")[1]}
                   </span>
                 </div>
                 <div className="flex flex-col space-y-2">
                   <span className="text-gray-600">Gambar Kendaraan</span>
-                  {latestVehicle?.image_path && (
+                  {latestVehicle?.img_path_exit && (
                     <img
-                      src={latestVehicle.image_path}
+                      src={latestVehicle.img_path_exit}
                       alt="Gambar Kendaraan"
                       className="rounded-lg shadow-md max-w-full h-auto"
                     />
                   )}
                 </div>
-                <button
-                  onClick={handlePayment}
-                  className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow w-full"
-                >
-                  <DollarSign className="w-5 h-5" />
-                  Bayar
-                </button>
+                {!isMember && (
+                  <button
+                    onClick={handlePayment}
+                    className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow w-full"
+                  >
+                    <DollarSign className="w-5 h-5" />
+                    Bayar
+                  </button>
+                )}
               </div>
             </div>
           )}
