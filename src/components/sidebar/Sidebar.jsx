@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Car, 
   Plus, 
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar = ({ activeTab }) => {
+  const navigate = useNavigate();
   const menuItems = [
     { id: 'home', label: 'Dashboard', icon: BarChart3, path: '/' },
     { id: 'membership-list', label: 'Membership', icon: Car, path: '/membership-list' },
@@ -18,6 +19,12 @@ const Sidebar = ({ activeTab }) => {
     { id: 'logs', label: 'Log Aktivitas', icon: FileText, path: '/logs' },
     { id: 'camera', label: 'Kamera', icon: Camera, path: '/camera' }
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('loginExpiredAt');
+    navigate('/login');
+  };
 
   return (
     <div className="w-64 bg-white shadow-xl h-screen sticky top-0">
@@ -51,7 +58,7 @@ const Sidebar = ({ activeTab }) => {
       </div>
       
       <div className="absolute bottom-0 left-0 right-0 p-6">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl mb-3">
           <div className="flex items-center">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg mr-3">
               <Users className="w-5 h-5 text-white" />
@@ -62,6 +69,12 @@ const Sidebar = ({ activeTab }) => {
             </div>
           </div>
         </div>
+        <button
+          onClick={handleLogout}
+          className="w-full mt-2 flex items-center justify-center gap-2 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-all shadow"
+        >
+          Logout
+        </button>
       </div>
     </div>
   );

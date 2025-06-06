@@ -9,6 +9,7 @@ import Modal from './components/modal/Modal';
 import PlatIllegalScreen from './components/views/platilegal/PlatIllegal';
 import MembershipScreen from './components/views/membership/Membership';
 import LiveStreamCard from './components/views/camera/camera';
+import LoginAdmin from './components/login/LoginAdmin';
 
 const AppContent = () => {
   const location = useLocation();
@@ -27,12 +28,13 @@ const AppContent = () => {
     }
   };
 
+  const isLoginPage = location.pathname === "/login";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
       <div className="flex">
-        <Sidebar activeTab={getCurrentTab()} />
-        
-        <div className="flex-1 p-8">
+        {!isLoginPage && <Sidebar activeTab={getCurrentTab()} />}
+        <div className={`flex-1 ${isLoginPage ? '' : 'p-8'}`}>
           <Routes>
             <Route path="/" element={<HomeScreen />} />
             <Route path="/membership-list" element={<MembershipScreen />} />
@@ -41,11 +43,10 @@ const AppContent = () => {
             <Route path="/statistics" element={<StatisticsScreen />} />
             <Route path="/logs" element={<LogsScreen />} />
             <Route path="/camera" element={<LiveStreamCard />} />
+            <Route path="/login" element={<LoginAdmin />} />
           </Routes>
         </div>
       </div>
-
-      
     </div>
   );
 };

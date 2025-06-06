@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Car, 
@@ -102,6 +102,16 @@ const HomeScreen = () => {
     };
     return colors[selectedStatistic];
   };
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
+    const expired = localStorage.getItem('loginExpiredAt');
+    if (!isLoggedIn || !expired || Date.now() > Number(expired)) {
+      localStorage.removeItem('isAdminLoggedIn');
+      localStorage.removeItem('loginExpiredAt');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   return (
     <div className="space-y-8">
