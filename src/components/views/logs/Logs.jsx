@@ -114,10 +114,20 @@ const LogsScreen = () => {
 
   // Sort data
   const sortedData = [...filteredData].sort((a, b) => {
+    // Prioritaskan plat yang diprioritaskan ke atas
+    if (prioritizePlate) {
+      if (a.plate_number === prioritizePlate && b.plate_number !== prioritizePlate) {
+        return -1;
+      }
+      if (b.plate_number === prioritizePlate && a.plate_number !== prioritizePlate) {
+        return 1;
+      }
+    }
+    
+    // Sorting normal setelah prioritas
     if (sortConfig.key) {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
-
       if (aValue < bValue) {
         return sortConfig.direction === "asc" ? -1 : 1;
       }
@@ -130,10 +140,11 @@ const LogsScreen = () => {
 
   // Baru setelah itu, useEffect yang pakai sortedData
   useEffect(() => {
-    if (prioritizePlate && rowRefs.current[prioritizePlate]) {
-      rowRefs.current[prioritizePlate].scrollIntoView({
-        behavior: "smooth",
-        block: "center",
+    if (prioritizePlate) {
+      // Scroll ke atas karena item prioritas sudah ada di posisi teratas
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
       });
     }
   }, [prioritizePlate, sortedData]);

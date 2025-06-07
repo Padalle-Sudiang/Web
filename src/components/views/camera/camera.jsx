@@ -75,6 +75,10 @@ const LiveStreamMonitor = () => {
 
         setCaptureStatus("Capture berhasil!");
         setTimeout(() => setCaptureStatus(""), 3000);
+        // Refresh data setelah capture
+        setTimeout(() => {
+          getLatestVehicle();
+        }, 1000);
       } else {
         const errorText = await response.text();
         setCaptureStatus(`Capture gagal: ${response.status}`);
@@ -95,25 +99,85 @@ const LiveStreamMonitor = () => {
       );
       const data = await response.json();
 
-      // console.log("Data mentah:", data);
-
       if (Array.isArray(data) && data.length > 0) {
-        const withTimestamps = data.filter((item) => item.exit_time);
+        // Filter hanya data yang punya gambar exit
+        const withExitImages = data.filter((item) => item.img_path_exit);
 
-        // console.log("Dengan exit_time:", withTimestamps);
+        // Fungsi untuk mengambil timestamp dari nama file
+        const extractTimestamp = (path) => {
+          const filename = path.split("/").pop(); // Ambil nama file saja
+          const match = filename.match(/exit_(\d{8})_(\d{6})/); // Sesuaikan regex
+          if (!match) return null;
 
-        const sortedData = withTimestamps.sort(
-          (a, b) =>
-            new Date(b.exit_time.replace(" ", "T")) -
-            new Date(a.exit_time.replace(" ", "T"))
-        );
+          const [_, date, time] = match;
+          return new Date(
+            `${date.substring(0, 4)}-${date.substring(4, 6)}-${date.substring(
+              6,
+              8
+            )}T` +
+              `${time.substring(0, 2)}:${time.substring(2, 4)}:${time.substring(
+                4,
+                6
+              )}`
+          );
+        };
 
-        const isMem = await getLatestMember(sortedData[0].plate_number);
-        setIsMember(isMem);
+        // Ambil timestamp dari nama file dan urutkan dari terbaru
+        const sorted = withExitImages
+          .map((item) => ({
+            ...item,
+            captureTimestamp: extractTimestamp(item.img_path_exit),
+          }))
+          .filter((item) => item.captureTimestamp) // Hanya yang timestamp valid
+          .sort((a, b) => b.captureTimestamp - a.captureTimestamp); // Urutkan dari terbaru
 
-        setLatestVehicle(sortedData[0]);
+        if (sorted.length > 0) {
+          setLatestVehicle(sorted[0]);
+          if (sorted[0].is_member) {
+            const response = await fetch(
+              "http://tkj-3b.com/tkj-3b.com/opengate/parking-payment.php",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  plate_number: sorted[0].plate_number,
+                  amount_paid: 0,
+                }),
+              }
+            );
+            if (!response.ok) throw new Error("Failed to update parking data");
+
+            const result = await response.json();
+            console.log("Data yang akan dikirim:", {
+              plate_number: sorted[0].plate_number,
+              amount_paid: 0,
+            });
+            console.log("plat nomornya: ", sorted[0].plate_number);
+
+            console.log("Respon untuk open gatenya?: ", result);
+
+            if (typeof result === "object" && "open_gate" in result) {
+              if (result.open_gate) {
+                try {
+                  await fetch("http://10.12.12.251:5050/servo/open", {
+                    method: "POST",
+                  });
+                  console.log("Servo opened successfully");
+                } catch (servoErr) {
+                  console.error("Error opening servo:", servoErr);
+                }
+              } else {
+                throw new Error(result.message || "Failed to process payment");
+              }
+            } else {
+              throw new Error("Response format invalid: 'open_gate' not found");
+            }
+          }
+        } else {
+          console.warn("Tidak ada data dengan timestamp yang valid.");
+        }
       } else {
-        console.warn("Data kosong atau bukan array");
+        console.warn("Data kosong atau tidak dalam format array.");
       }
     } catch (error) {
       console.error("Gagal mengambil data:", error);
@@ -140,7 +204,6 @@ const LiveStreamMonitor = () => {
 
   const membership = async () => {
     try {
-      const exitTime = new Date().toISOString();
       const response = await fetch(
         "http://tkj-3b.com/tkj-3b.com/opengate/parking-payment.php",
         {
@@ -148,7 +211,6 @@ const LiveStreamMonitor = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             plate_number: latestVehicle?.plate_number,
-            exit_time: exitTime,
             amount_paid: 0,
           }),
         }
@@ -157,8 +219,13 @@ const LiveStreamMonitor = () => {
       if (!response.ok) throw new Error("Failed to update parking data");
 
       const result = await response.json();
-      console.log("plat nomornya: ",latestVehicle?.plate_number);
-      // console.log(exitTime);
+      console.log("Data yang akan dikirim:", {
+        plate_number: latestVehicle?.plate_number,
+        exit_time: exitTime,
+        amount_paid: 0,
+      });
+      console.log("plat nomornya: ", latestVehicle?.plate_number);
+      console.log(exitTime);
 
       console.log("Respon untuk open gatenya?: ", result);
 
@@ -199,9 +266,9 @@ const LiveStreamMonitor = () => {
   };
 
   const handleClick = async () => {
-    membership();
-    handleCapture();
+    await handleCapture();
     await getLatestVehicle();
+    if (latestVehicle.is_member == 1) await membership();
   };
 
   const handlePayment = () => {
@@ -461,8 +528,7 @@ const LiveStreamMonitor = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Status Member</span>
                   <span className="font-medium">
-                    {isMember && "Member"}
-                    {!isMember && "Bukan Member"}
+                    {latestVehicle?.is_member === 1 ? "Member" : "Bukan Member"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -487,7 +553,7 @@ const LiveStreamMonitor = () => {
                     />
                   )}
                 </div>
-                {!isMember && (
+                {latestVehicle.is_member === 0 && (
                   <button
                     onClick={handlePayment}
                     className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow w-full"

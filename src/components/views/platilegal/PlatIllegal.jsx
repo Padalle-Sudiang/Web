@@ -17,6 +17,8 @@ import {
   User,
   Phone,
   FileText,
+  Share,
+  PhoneCall,
 } from "lucide-react";
 
 const PlatIllegalScreen = () => {
@@ -28,20 +30,24 @@ const PlatIllegalScreen = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Form state for adding new illegal plate
   const [formData, setFormData] = useState({
     plate_number: "",
     nama_pelapor: "",
     no_wa: "",
-    description: ""
+    description: "",
   });
+
+useEffect(() => {
+  fetchIllegalPlates();
+}, []);
 
   // Function to handle image modal
   const handleImageClick = (imageUrl, plateNumber) => {
     setSelectedImage({
       url: imageUrl,
-      plateNumber: plateNumber
+      plateNumber: plateNumber,
     });
     setShowImageModal(true);
   };
@@ -50,18 +56,21 @@ const PlatIllegalScreen = () => {
   const fetchIllegalPlates = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://tkj-3b.com/tkj-3b.com/opengate/illegal-plates.php', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      const response = await fetch(
+        "http://tkj-3b.com/tkj-3b.com/opengate/illegal-plates.php",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       if (response.ok) {
         const data = await response.json();
         setPlatIllegalData(data);
       } else {
-        console.error('Failed to fetch illegal plates data');
+        console.error("Failed to fetch illegal plates data");
         // Fallback to sample data if API fails
         setPlatIllegalData([
           {
@@ -71,11 +80,11 @@ const PlatIllegalScreen = () => {
             status: "Dilaporkan",
             created_at: "2024-03-15",
             nama_pelapor: "Anonymous",
-          }
+          },
         ]);
       }
     } catch (error) {
-      console.error('Error fetching illegal plates:', error);
+      console.error("Error fetching illegal plates:", error);
       // Fallback to sample data
       setPlatIllegalData([
         {
@@ -85,7 +94,7 @@ const PlatIllegalScreen = () => {
           status: "Dilaporkan",
           created_at: "2024-03-15",
           nama_pelapor: "Anonymous",
-        }
+        },
       ]);
     }
     setLoading(false);
@@ -95,19 +104,22 @@ const PlatIllegalScreen = () => {
   const fetchHistoryLogs = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://tkj-3b.com/tkj-3b.com/opengate/get_illegal_logs.php', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      const response = await fetch(
+        "http://tkj-3b.com/tkj-3b.com/opengate/get_illegal_logs.php",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       if (response.ok) {
         const data = await response.json();
         console.log("Data yang diterima: :", data);
         setHistoryLogData(data.logs);
       } else {
-        console.error('Failed to fetch history logs data');
+        console.error("Failed to fetch history logs data");
         // Fallback to sample data
         setHistoryLogData([
           {
@@ -119,11 +131,11 @@ const PlatIllegalScreen = () => {
             location: "Gate A",
             image_url: "https://via.placeholder.com/60x40?text=Car1",
             duration: "9h 15m",
-          }
+          },
         ]);
       }
     } catch (error) {
-      console.error('Error fetching history logs:', error);
+      console.error("Error fetching history logs:", error);
       // Fallback to sample data
       setHistoryLogData([
         {
@@ -135,46 +147,74 @@ const PlatIllegalScreen = () => {
           location: "Gate A",
           image_url: "https://via.placeholder.com/60x40?text=Car1",
           duration: "9h 15m",
-        }
+        },
       ]);
     }
     setLoading(false);
   };
 
-  // Submit new illegal plate report
+  const shareToWhatsApp = (item) => {
+    // Debug bantu cek isi item
+    console.log("ITEM:", item);
+
+    // Cari data plat illegal yang sesuai untuk mendapatkan no_wa
+    const matchingIllegalPlate = platIllegalData.find(
+      (plate) => plate.plate_number === item.plateNumber
+    );
+
+    if (!matchingIllegalPlate || !matchingIllegalPlate.no_wa) {
+      console.error(
+        "Nomor WhatsApp tidak ditemukan untuk plat:",
+        item.plateNumber
+      );
+      alert("Nomor WhatsApp tidak ditemukan untuk plat ini");
+      return;
+    }
+
+    // Format nomor: ganti 08xxx → 628xxx jika diperlukan
+    const formattedNoWa = matchingIllegalPlate.no_wa.replace(/^0/, "62");
+    const shareText = `${item?.plateNumber} - Apakah ini merupakan kendaraan anda?\n${item.url}`;
+    const whatsappUrl = `https://wa.me/${formattedNoWa}?text=${encodeURIComponent(
+      shareText
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
   const submitIllegalPlate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
-      const response = await fetch('http://tkj-3b.com/tkj-3b.com/opengate/illegal-plates.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-      
+      const response = await fetch(
+        "http://tkj-3b.com/tkj-3b.com/opengate/illegal-plates.php",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
       if (response.ok) {
-        // Reset form and close modal
         setFormData({
           plate_number: "",
           nama_pelapor: "",
           no_wa: "",
-          description: ""
+          description: "",
         });
         setShowAddModal(false);
-        
+
         // Refresh the illegal plates data
         fetchIllegalPlates();
-        
-        alert('Plat berhasil dilaporkan!');
+
+        alert("Plat berhasil dilaporkan!");
       } else {
-        alert('Gagal melaporkan plat. Silakan coba lagi.');
+        alert("Gagal melaporkan plat. Silakan coba lagi.");
       }
     } catch (error) {
-      console.error('Error submitting illegal plate:', error);
-      alert('Terjadi kesalahan. Silakan coba lagi.');
+      console.error("Error submitting illegal plate:", error);
+      alert("Terjadi kesalahan. Silakan coba lagi.");
     }
     setLoading(false);
   };
@@ -182,26 +222,29 @@ const PlatIllegalScreen = () => {
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   // Filter data based on search term
-  const filteredIllegalData = platIllegalData.filter(plate => 
-    plate.plate_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    plate.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    plate.nama_pelapor?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredIllegalData = platIllegalData.filter(
+    (plate) =>
+      plate.plate_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      plate.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      plate.nama_pelapor?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredHistoryData = historyLogData.filter(log => 
-    log.plate_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.location?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredHistoryData = historyLogData.filter(
+    (log) =>
+      log.plate_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Load data on component mount and tab change
   useEffect(() => {
+    fetchIllegalPlates();
+    
     if (activeTab === "illegal") {
       fetchIllegalPlates();
     } else {
@@ -235,9 +278,6 @@ const PlatIllegalScreen = () => {
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Pelapor
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Aksi
                 </th>
               </tr>
             </thead>
@@ -280,19 +320,6 @@ const PlatIllegalScreen = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                     {plat.nama_pelapor}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
-                      <button className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors">
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}
@@ -345,10 +372,15 @@ const PlatIllegalScreen = () => {
                 const now = new Date();
                 const duration = Math.floor((now - logCreatedAt) / (1000 * 60)); // Durasi dalam menit
                 const formattedDate = logCreatedAt.toLocaleDateString();
-                const exitTime = log.exit_time ? new Date(log.exit_time).toLocaleTimeString() : "belum keluar";
-  
+                const exitTime = log.exit_time
+                  ? new Date(log.exit_time).toLocaleTimeString()
+                  : "belum keluar";
+
                 return (
-                  <tr key={log.log_id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={log.log_id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="bg-green-100 p-2 rounded-lg mr-3">
@@ -362,7 +394,9 @@ const PlatIllegalScreen = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-green-600">
                         <LogIn className="w-4 h-4 mr-1" />
-                        <span className="font-medium">{entryTime.toLocaleTimeString()}</span>
+                        <span className="font-medium">
+                          {entryTime.toLocaleTimeString()}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -383,14 +417,29 @@ const PlatIllegalScreen = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img
-                          src={log.img_path || "https://via.placeholder.com/60x40?text=No+Image"}
+                          src={
+                            log.img_path ||
+                            "https://via.placeholder.com/60x40?text=No+Image"
+                          }
                           alt="Vehicle"
                           className="w-12 h-8 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors"
-                          onClick={() => handleImageClick(log.img_path || "https://via.placeholder.com/60x40?text=No+Image", log.plate_number)}
+                          onClick={() =>
+                            handleImageClick(
+                              log.img_path ||
+                                "https://via.placeholder.com/60x40?text=No+Image",
+                              log.plate_number
+                            )
+                          }
                         />
-                        <button 
+                        <button
                           className="ml-2 p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          onClick={() => handleImageClick(log.img_path || "https://via.placeholder.com/60x40?text=No+Image", log.plate_number)}
+                          onClick={() =>
+                            handleImageClick(
+                              log.img_path ||
+                                "https://via.placeholder.com/60x40?text=No+Image",
+                              log.plate_number
+                            )
+                          }
                         >
                           <Camera className="w-4 h-4" />
                         </button>
@@ -420,7 +469,9 @@ const PlatIllegalScreen = () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Laporkan Plat Illegal</h3>
+          <h3 className="text-xl font-bold text-gray-900">
+            Laporkan Plat Illegal
+          </h3>
           <button
             onClick={() => setShowAddModal(false)}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -428,7 +479,7 @@ const PlatIllegalScreen = () => {
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={submitIllegalPlate} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -445,7 +496,7 @@ const PlatIllegalScreen = () => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <User className="w-4 h-4 inline mr-2" />
@@ -461,7 +512,7 @@ const PlatIllegalScreen = () => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Phone className="w-4 h-4 inline mr-2" />
@@ -477,7 +528,7 @@ const PlatIllegalScreen = () => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FileText className="w-4 h-4 inline mr-2" />
@@ -493,7 +544,7 @@ const PlatIllegalScreen = () => {
               required
             />
           </div>
-          
+
           <div className="flex gap-3 pt-4">
             <button
               type="button"
@@ -522,7 +573,9 @@ const PlatIllegalScreen = () => {
         <div className="sticky top-0 bg-white flex justify-between items-center p-4 border-b">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Foto Kendaraan</h3>
-            <p className="text-sm text-gray-600">Plat: {selectedImage?.plateNumber}</p>
+            <p className="text-sm text-gray-600">
+              Plat: {selectedImage?.plateNumber}
+            </p>
           </div>
           <button
             onClick={() => setShowImageModal(false)}
@@ -531,7 +584,7 @@ const PlatIllegalScreen = () => {
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <div className="p-6">
           <div className="flex justify-center">
             <img
@@ -539,17 +592,20 @@ const PlatIllegalScreen = () => {
               alt={`Vehicle ${selectedImage?.plateNumber}`}
               className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-lg"
               onError={(e) => {
-                e.target.src = "https://via.placeholder.com/400x300?text=Gambar+Tidak+Ditemukan";
+                e.target.src =
+                  "https://via.placeholder.com/400x300?text=Gambar+Tidak+Ditemukan";
               }}
             />
           </div>
-          
+
           <div className="flex justify-center gap-3 mt-6">
             <button
               onClick={() => {
-                const link = document.createElement('a');
+                const link = document.createElement("a");
                 link.href = selectedImage?.url;
-                link.download = `foto_${selectedImage?.plateNumber}_${new Date().getTime()}.jpg`;
+                link.download = `foto_${
+                  selectedImage?.plateNumber
+                }_${new Date().getTime()}.jpg`;
                 link.click();
               }}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -562,6 +618,13 @@ const PlatIllegalScreen = () => {
               className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Tutup
+            </button>
+            <button
+              onClick={() => shareToWhatsApp(selectedImage)}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <PhoneCall className="w-4 h-4 mr-2" />
+              Share to WhatsApp
             </button>
           </div>
         </div>
