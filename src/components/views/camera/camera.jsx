@@ -157,8 +157,8 @@ const LiveStreamMonitor = () => {
       if (!response.ok) throw new Error("Failed to update parking data");
 
       const result = await response.json();
-      console.log(latestVehicle?.plate_number);
-      console.log(exitTime);
+      console.log("plat nomornya: ",latestVehicle?.plate_number);
+      // console.log(exitTime);
 
       console.log("Respon untuk open gatenya?: ", result);
 

@@ -619,20 +619,28 @@ const LogsScreen = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {Number(log.parking_fee) !== 0 && (
-                          <DollarSign className="w-4 h-4 text-green-600 mr-2" />
+                        {!log.exit_time ? (
+                          <span className="text-orange-600 font-medium">
+                            Belum Keluar
+                          </span>
+                        ) : (
+                          <>
+                            {Number(log.parking_fee) !== 0 && (
+                              <DollarSign className="w-4 h-4 text-green-600 mr-2" />
+                            )}
+                            <span
+                              className={`font-medium ${
+                                Number(log.parking_fee) === 0
+                                  ? "text-green-600"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {Number(log.parking_fee) === 0
+                                ? "Membership"
+                                : formatCurrency(log.parking_fee)}
+                            </span>
+                          </>
                         )}
-                        <span
-                          className={`font-medium ${
-                            Number(log.parking_fee) === 0
-                              ? "text-green-600"
-                              : "text-gray-900"
-                          }`}
-                        >
-                          {Number(log.parking_fee) === 0
-                            ? "Membership"
-                            : formatCurrency(log.parking_fee)}
-                        </span>
                       </div>
                     </td>
 
