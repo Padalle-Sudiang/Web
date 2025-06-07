@@ -133,7 +133,7 @@ const LiveStreamMonitor = () => {
 
         if (sorted.length > 0) {
           setLatestVehicle(sorted[0]);
-          if (sorted[0].is_member) {
+          if (sorted[0].is_member == 1) {
             const response = await fetch(
               "http://tkj-3b.com/tkj-3b.com/opengate/parking-payment.php",
               {
@@ -268,7 +268,7 @@ const LiveStreamMonitor = () => {
   const handleClick = async () => {
     await handleCapture();
     await getLatestVehicle();
-    if (latestVehicle.is_member == 1) await membership();
+    // if (latestVehicle.is_member == 1) await membership();
   };
 
   const handlePayment = () => {
@@ -553,7 +553,7 @@ const LiveStreamMonitor = () => {
                     />
                   )}
                 </div>
-                {latestVehicle.is_member === 0 && (
+                {latestVehicle.is_member == 0 && (
                   <button
                     onClick={handlePayment}
                     className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow w-full"
