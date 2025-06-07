@@ -528,7 +528,7 @@ const LiveStreamMonitor = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Status Member</span>
                   <span className="font-medium">
-                    {latestVehicle?.is_member === 1 ? "Member" : "Bukan Member"}
+                    {latestVehicle?.is_member == 1 ? "Member" : "Bukan Member"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
