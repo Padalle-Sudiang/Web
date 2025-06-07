@@ -274,7 +274,6 @@ const LogsScreen = () => {
     }
     setIsPaymentLoading(true);
     try {
-      const exitTime = new Date().toISOString();
       const response = await fetch(
         "http://tkj-3b.com/tkj-3b.com/opengate/parking-payment.php",
         {
@@ -282,7 +281,6 @@ const LogsScreen = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             plate_number: selectedPayment.plate_number,
-            exit_time: exitTime,
             amount_paid: parkingFee,
           }),
         }
@@ -296,7 +294,6 @@ const LogsScreen = () => {
             log.plate_number === selectedPayment.plate_number
               ? {
                   ...log,
-                  exit_time: exitTime,
                   amount_paid: parkingFee,
                   status: "SELESAI",
                 }
