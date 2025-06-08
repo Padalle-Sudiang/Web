@@ -59,6 +59,8 @@ Untuk menjalankan development
 - **Statistik**: Melihat statistik parkir.
 - **Log**: Mengakses log aktivitas
 - **Live Camera Feeds**: Memantau umpan kamera langsung dari berbagai lokasi
+- **Export to Excel**: Analisa data dengan mudah
+- **Share to WhatsApp**: Mengirimkan log entry plat ilegal kepada pemilik kendaraan melalui WhatsApp
 
 
 ## Components
@@ -218,3 +220,25 @@ Aplikasi ini menggunakan React Router untuk navigasi. Rute berikut didefinisikan
 
 - Komponen monitor umpan langsung mengambil umpan video dari URL yang ditentukan.
 - Ini memungkinkan pengambilan gambar dan melihat entri kendaraan terbaru.
+## Contributing
+- Cek repository tujuan dan daftarkan
+```bash
+git add .
+```
+- Satukan branch dengan
+```bash
+git branch -M main
+```
+- Jika ingin berbeda branch
+```bash
+git checkout -b feature/YourFeature
+```
+- Buat perubahan setelahnya commit ke github
+```bash
+git commit -m "i'm added some feature latest"
+```
+- Push commit ke branch
+```bash
+git push origin main
+```
+- Setelahnya open pull request

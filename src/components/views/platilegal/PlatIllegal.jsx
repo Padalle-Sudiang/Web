@@ -350,10 +350,7 @@ useEffect(() => {
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Lokasi
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Durasi
-                </th>
+                </th> 
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Tanggal
                 </th>
@@ -400,13 +397,7 @@ useEffect(() => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                      Gedung Belakang
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-blue-600">
-                        <Clock className="w-4 h-4 mr-1" />
-                        <span className="font-medium">{duration} menit</span>
-                      </div>
+                      Parkiran Belakang Mall Nipah
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                       {formattedDate}
