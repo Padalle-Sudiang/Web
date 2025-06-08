@@ -173,7 +173,7 @@ useEffect(() => {
 
     // Format nomor: ganti 08xxx → 628xxx jika diperlukan
     const formattedNoWa = matchingIllegalPlate.no_wa.replace(/^0/, "62");
-    const shareText = `${item?.plateNumber} - Apakah ini merupakan kendaraan anda?\n${item.url}`;
+    const shareText = `${item?.plateNumber} - Apakah ini merupakan kendaraan anda?\n${item.url}\n\n Kendaraan ini sekarang berada di Jl.Urip Sumoharjo Parkiran Mall Nipah`;
     const whatsappUrl = `https://wa.me/${formattedNoWa}?text=${encodeURIComponent(
       shareText
     )}`;
@@ -349,7 +349,7 @@ useEffect(() => {
                   Jam Masuk
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Jam Keluar
+                  Lokasi
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Durasi
@@ -399,11 +399,8 @@ useEffect(() => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-red-600">
-                        <LogOut className="w-4 h-4 mr-1" />
-                        <span className="font-medium">{exitTime}</span>
-                      </div>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+                      Gedung Belakang
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-blue-600">
@@ -640,14 +637,14 @@ useEffect(() => {
           Manajemen Plat Illegal
         </h2>
         <div className="flex gap-2">
-          <button className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          {/* <button className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </button>
           <button className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             <Download className="w-4 h-4 mr-2" />
             Export
-          </button>
+          </button> */}
           {activeTab === "illegal" && (
             <button
               onClick={() => setShowAddModal(true)}

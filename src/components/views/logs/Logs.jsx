@@ -778,6 +778,9 @@ const LogsScreen = () => {
                   <span className="font-bold text-blue-700">
                     {formatCurrency(parkingFee)}
                   </span>
+                  <script>
+                    console.log(parkingFee);
+                  </script>
                 </div>
                 <div className="text-xs text-gray-400 mt-2">
                   1 jam pertama Rp3.000, jam berikutnya Rp3.000/jam

@@ -278,10 +278,10 @@ const MembershipScreen = () => {
           Daftar Membership Plat Nomor
         </h2>
         <div className="flex gap-2">
-          <button className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          {/* <button className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             <Filter className="w-4 h-4 mr-2" />
             Filter
-          </button>
+          </button> */}
           <button
             onClick={handleExport}
             className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"

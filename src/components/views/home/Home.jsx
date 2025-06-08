@@ -16,7 +16,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const HomeScreen = () => {
   const navigate = useNavigate();
-  const [selectedStatistic, setSelectedStatistic] = useState('membership');
+  const [selectedStatistic, setSelectedStatistic] = useState('parking');
   const [selectedPeriod, setSelectedPeriod] = useState('harian');
   const [loading, setLoading] = useState(true);
   const [apiData, setApiData] = useState({
@@ -31,7 +31,7 @@ const HomeScreen = () => {
   ]);
 
   const statisticOptions = [
-    { value: 'membership', label: 'Pendaftaran Membership' },
+    // { value: 'membership', label: 'Pendaftaran Membership' },
     { value: 'parking', label: 'Kendaraan Parkir' },
     { value: 'income', label: 'Pemasukan' }
   ];
@@ -44,53 +44,51 @@ const HomeScreen = () => {
     { value: 'alltime', label: 'All Time' }
   ];
 
-  // Fetch data from APIs
-  const fetchApiData = async () => {
-    try {
-      setLoading(true);
-      
-      const [membershipRes, vehiclesRes, parkingLogsRes] = await Promise.all([
-        fetch('http://tkj-3b.com/tkj-3b.com/opengate/membership.php'),
-        fetch('http://tkj-3b.com/tkj-3b.com/opengate/get-vehicles.php'),
-        fetch('http://tkj-3b.com/tkj-3b.com/opengate/parking-logs.php')
-      ]);
+// Fetch data from APIs
+const fetchApiData = async () => {
+  try {
+    setLoading(true);
+    
+    const [membershipRes, parkingLogsRes] = await Promise.all([
+      fetch('http://tkj-3b.com/tkj-3b.com/opengate/membership.php'),
+      fetch('http://tkj-3b.com/tkj-3b.com/opengate/parking-logs.php')
+    ]);
 
-      const membershipData = await membershipRes.json();
-      const vehiclesData = await vehiclesRes.json();
-      const parkingLogsData = await parkingLogsRes.json();
+    const membershipData = await membershipRes.json();
+    const parkingLogsData = await parkingLogsRes.json();
 
-      setApiData({
-        membership: Array.isArray(membershipData) ? membershipData : [],
-        vehicles: Array.isArray(vehiclesData) ? vehiclesData : [],
-        parkingLogs: Array.isArray(parkingLogsData) ? parkingLogsData : []
-      });
+    setApiData({
+      membership: Array.isArray(membershipData) ? membershipData : [],
+      vehicles: Array.isArray(parkingLogsData) ? parkingLogsData : [], // vehicles data comes from parking logs
+      parkingLogs: Array.isArray(parkingLogsData) ? parkingLogsData : []
+    });
 
-      // Update stats
-      const totalMembership = Array.isArray(membershipData) ? membershipData.length : 0;
-      const totalVehicles = Array.isArray(vehiclesData) ? vehiclesData.length : 0;
-      
-      // Calculate total income
-      let totalIncome = 0;
-      if (Array.isArray(parkingLogsData)) {
-        totalIncome = parkingLogsData.reduce((sum, log) => {
-          return sum + (parseFloat(log.parking_fee) || 0);
-        }, 0);
-      }
-      // Add membership income (membership count × 50,000)
-      totalIncome += totalMembership * 50000;
-
-      setStats([
-        { title: 'Total Kendaraan Membership', value: totalMembership.toLocaleString('id-ID'), icon: Car, color: 'from-blue-500 to-blue-600' },
-        { title: 'Total Kendaraan Parkir', value: totalVehicles.toLocaleString('id-ID'), icon: ParkingCircle, color: 'from-green-500 to-green-600' },
-        { title: 'Total Pemasukan', value: `Rp ${totalIncome.toLocaleString('id-ID')}`, icon: DollarSign, color: 'from-red-500 to-red-600' }
-      ]);
-
-    } catch (error) {
-      console.error('Error fetching API data:', error);
-    } finally {
-      setLoading(false);
+    // Update stats
+    const totalMembership = Array.isArray(membershipData) ? membershipData.length : 0;
+    const totalVehicles = Array.isArray(parkingLogsData) ? parkingLogsData.length : 0;
+    
+    // Calculate total income
+    let totalIncome = 0;
+    if (Array.isArray(parkingLogsData)) {
+      totalIncome = parkingLogsData.reduce((sum, log) => {
+        return sum + (parseFloat(log.parking_fee) || 0);
+      }, 0);
     }
-  };
+    // Add membership income (membership count × 50,000)
+    totalIncome += totalMembership * 50000;
+
+    setStats([
+      { title: 'Total Kendaraan Membership', value: totalMembership.toLocaleString('id-ID'), icon: Car, color: 'from-blue-500 to-blue-600' },
+      { title: 'Total Kendaraan Parkir', value: totalVehicles.toLocaleString('id-ID'), icon: ParkingCircle, color: 'from-green-500 to-green-600' },
+      { title: 'Total Pemasukan', value: `Rp ${totalIncome.toLocaleString('id-ID')}`, icon: DollarSign, color: 'from-red-500 to-red-600' }
+    ]);
+
+  } catch (error) {
+    console.error('Error fetching API data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Group data by period
   const groupDataByPeriod = (data, dateField, period) => {
@@ -150,71 +148,69 @@ const HomeScreen = () => {
   };
 
   // Generate chart data based on selected statistic and period
-  const getChartData = () => {
-    let data = [];
-    let dateField = '';
+  // Generate chart data based on selected statistic and period
+const getChartData = () => {
+  let data = [];
+  let dateField = '';
+  
+  switch (selectedStatistic) {
+    // case 'membership':
+    //   data = apiData.membership;
+    //   dateField = 'membership_expiry'; // Fixed: use membership_expiry for membership data
+    //   break;
+    case 'parking':
+      data = apiData.vehicles;
+      dateField = 'entry_time'; // Fixed: use entry_time for parking data
+      break;
+    case 'income':
+      data = apiData.parkingLogs;
+      dateField = 'entry_time'; // Fixed: use entry_time for parking logs
+      break;
+  }
+
+  const grouped = groupDataByPeriod(data, dateField, selectedPeriod);
+  
+  // Convert grouped data to chart format
+  const chartData = Object.entries(grouped).map(([name, items]) => {
+    let value = 0;
     
     switch (selectedStatistic) {
-      case 'membership':
-        data = apiData.membership;
-        dateField = 'created_at'; // Adjust based on your API response structure
-        break;
+      // case 'membership':
+      //   value = items.length;
+      //   break;
       case 'parking':
-        data = apiData.vehicles;
-        dateField = 'created_at'; // Adjust based on your API response structure
+        value = items.length;
         break;
       case 'income':
-        data = apiData.parkingLogs;
-        dateField = 'created_at'; // Adjust based on your API response structure
+        value = items.reduce((sum, item) => {
+          return sum + (parseFloat(item.parking_fee) || 0);
+        }, 0);
+        // Note: For income calculation, we're only using parking fees from parking logs
+        // Membership income is calculated separately at the API level or in stats
         break;
     }
 
-    const grouped = groupDataByPeriod(data, dateField, selectedPeriod);
-    
-    // Convert grouped data to chart format
-    const chartData = Object.entries(grouped).map(([name, items]) => {
-      let value = 0;
-      
-      switch (selectedStatistic) {
-        case 'membership':
-          value = items.length;
-          break;
-        case 'parking':
-          value = items.length;
-          break;
-        case 'income':
-          value = items.reduce((sum, item) => {
-            return sum + (parseFloat(item.parking_fee) || 0);
-          }, 0);
-          // Add membership income if showing income stats
-          if (selectedStatistic === 'income') {
-            const membershipCount = items.length; // This would need adjustment based on your data structure
-            value += membershipCount * 50000;
-          }
-          break;
-      }
+    return { name, value };
+  });
 
-      return { name, value };
-    });
+  // Sort chart data appropriately
+  if (selectedPeriod === 'harian') {
+    const dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    chartData.sort((a, b) => dayOrder.indexOf(a.name) - dayOrder.indexOf(b.name));
+  } else if (selectedPeriod === 'bulanan') {
+    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    chartData.sort((a, b) => monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name));
+  } else if (selectedPeriod === 'tahunan' || selectedPeriod === 'alltime') {
+    chartData.sort((a, b) => parseInt(a.name) - parseInt(b.name));
+  }
 
-    // Sort chart data appropriately
-    if (selectedPeriod === 'harian') {
-      const dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-      chartData.sort((a, b) => dayOrder.indexOf(a.name) - dayOrder.indexOf(b.name));
-    } else if (selectedPeriod === 'bulanan') {
-      const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-      chartData.sort((a, b) => monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name));
-    } else if (selectedPeriod === 'tahunan' || selectedPeriod === 'alltime') {
-      chartData.sort((a, b) => parseInt(a.name) - parseInt(b.name));
-    }
+  // If no data, return empty array or default data
+  if (chartData.length === 0) {
+    return getDefaultChartData();
+  }
 
-    // If no data, return empty array or default data
-    if (chartData.length === 0) {
-      return getDefaultChartData();
-    }
-
-    return chartData;
-  };
+  return chartData;
+};
 
   // Fallback default data when no API data is available
   const getDefaultChartData = () => {
